@@ -1,6 +1,8 @@
 import 'package:chat_project/constants.dart';
+import 'package:chat_project/screen/cubit/regester_cubit/register_cubit.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
 import '../component/botton.dart';
@@ -9,19 +11,12 @@ import '../helper/show-snack-bar.dart';
 import 'Chat_page.dart';
 import 'login.dart';
 
-class Regester_page extends StatefulWidget {
-  Regester_page({Key? key}) : super(key: key);
 
-  static String id = 'RegesterPage';
-
-  @override
-  State<Regester_page> createState() => _Regester_pageState();
-}
-
-class _Regester_pageState extends State<Regester_page> {
+class Regester_page extends StatelessWidget {
   String? email;
 
   String? password;
+  static String id = 'RegesterPage';
 
   bool isLoading = false;
 
@@ -29,126 +24,129 @@ class _Regester_pageState extends State<Regester_page> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: KPrimarycolor,
-      ),
-      backgroundColor: KPrimarycolor,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Form(
-          key: formKey,
-          child: ListView(
-            children: [
-              SizedBox(
-                height: 75,
-              ),
-              Image.asset(
-                'assets/images/scholar.png',
-                height: 100,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Scholar Chat',
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: Colors.white,
+    return BlocConsumer<RegisterCubit, RegisterState>(
+      listener: (context, state) {
+        if(state is RegisterLoading){
+          isLoading=true;
+        }else if( state is RegisterSuccess){
+          Navigator.pushNamed(context, Chat_Page.id , arguments: email);
+          isLoading=false;
+        }else if(state is RegisterFailure){
+          showSnackBar(context, state.errorMessage);
+          isLoading=false;
+        }
+      },
+      builder: (context, state) {
+        return ModalProgressHUD(
+          inAsyncCall: isLoading,
+          child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: KPrimarycolor,
+            ),
+            backgroundColor: KPrimarycolor,
+            body: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Form(
+                key: formKey,
+                child: ListView(
+                  children: [
+                    SizedBox(
+                      height: 75,
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 75,
-              ),
-              Row(
-                children: [
-                  Text(
-                    ' SIGN UP',
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
+                    Image.asset(
+                      'assets/images/scholar.png',
+                      height: 100,
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              CustomFormtextfield(
-                onChanged: (data) {
-                  email = data;
-                },
-                hintText: 'Email',
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              CustomFormtextfield(
-                onChanged: (data) {
-                  password = data;
-                },
-                hintText: 'Password',
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              custom_button(
-                onTap: () async {
-                  if (formKey.currentState!.validate()) {
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Scholar Chat',
+                          style: TextStyle(
+                            fontSize: 32,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 75,
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          ' SIGN UP',
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    CustomFormtextfield(
+                      onChanged: (data) {
+                        email = data;
+                      },
+                      hintText: 'Email',
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    CustomFormtextfield(
+                      onChanged: (data) {
+                        password = data;
+                      },
+                      hintText: 'Password',
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    custom_button(
+                      onTap: () async {
+                        if (formKey.currentState!.validate()) {
+                          BlocProvider.of<RegisterCubit>(context)
+                              .registerUser(email: email!, password: password!);
+                        } else {
 
-
-                      try {
-                        await registerUser();
-
-                        Navigator.pushNamed(context, Chat_Page.id);
-
-
-
-                      } on FirebaseAuthException catch (ex) {
-                        if (ex.code == 'weak-password') {
-                          showSnackBar(context, 'week password');
-                        } else if (ex.code == 'email-already-in-use') {
-                          showSnackBar(context, 'email already exists');
                         }
-                      } catch (ex) {
-                        showSnackBar(context, 'there was as error');
-                      }
-                    }
-
-                }, 
-                text: 'Regester',
-              ),
-              SizedBox(
-                height: 15,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'you have account',
-                    style: TextStyle(
-                      color: Colors.white,
+                      },
+                      text: 'Regester',
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      ' login',
-                      style: TextStyle(
-                        color: Colors.grey,
-                      ),
+                    SizedBox(
+                      height: 15,
                     ),
-                  )
-                ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'you have account',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            ' login',
+                            style: TextStyle(
+                              color: Colors.grey,
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
